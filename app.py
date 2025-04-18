@@ -128,7 +128,7 @@ noise_level = st.slider(
     min_value=0, max_value=100, value=100, step=5
 )
 
-num_corrupt = int((noise_level / 100) * total_pixels)
+num_corrupt = int((noise_level / 100) * n_pixels)
 
 if noise_level < 100:
     corrupted_array = corrupt_image(img_array, num_corrupt)

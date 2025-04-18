@@ -43,8 +43,9 @@ def estimate_image_complexity(img: Image.Image, steps=11, trials=5, size=(256, 2
     A = -N * VN + V[1:].sum()
     B = -V[1:].sum() + N * V0
     C3 = VN * (V0 - VN) * A / (B * 1000000) if B != 0 else 0 # dividing by 1,000,000 so it's in kilobytes^2
+    C3_norm = VN * (V0 - VN) * A / (B * V0**2) if V0 != 0 else 0
 
-    return V, V0, VN, A, B, C3
+    return V, V0, VN, A, B, C3, C3_norm
 
 def plot_complexity(V, V0, VN, A, B):
     N = len(V) - 1
@@ -88,6 +89,10 @@ The complexity score, denoted **C**, combines three factors:
 
 The resulting metric (**C**) is measured in KiloBytes², reflecting both the depth and complexity of your image's inherent structure.
 
+### 📌 Normalized Complexity:
+To compare complexity scores across different images and resolutions fairly, we also provide a **normalized complexity** metric (**Cₙₒᵣₘ**) that divides C by the square of the baseline (fully random) compression size \(V(0)^2\). This normalized measure highlights how structurally complex the image is relative to its size and base entropy.
+
+
 Upload your image below to explore its complexity, and use the noise-level slider to visualize how the image transforms under increasing randomness.
 """)
 
@@ -105,7 +110,11 @@ if uploaded_file:
         V, V0, VN, A, B, C3 = estimate_image_complexity(image, steps=steps, trials=trials, size=(resize_dim, resize_dim))
 
     st.markdown(f"**A:** {A:.2f} bytes &nbsp;&nbsp; **B:** {B:.2f} bytes &nbsp;&nbsp; **A/B:** {A/B:.2f}")
-    st.markdown(f"### Complexity Score: `{C3:.2f}` (in kilobytes²)")
+    st.markdown(f"""
+**Complexity (C)**: `{C3:.2f}` kilobytes²  
+**Normalized Complexity (Cₙₒᵣₘ)**: `{C3_norm:.6f}` (unitless, relative)
+""")
+
     
     st.pyplot(plot_complexity(V, V0, VN, A, B))
 else:
@@ -113,20 +122,21 @@ else:
 
 st.header("Visualize Noise Level")
 
-# Slider for previewing noise levels
-noise_level = st.slider("Preview image with noise level (%)", min_value=0, max_value=100, value=0, step=5)
+# Noise preview slider (reversed)
+noise_level = st.slider(
+    "Preview image with noise level (%)",
+    min_value=0, max_value=100, value=100, step=5
+)
 
-if noise_level > 0:
-    # Calculate number of pixels to corrupt
-    img_resized = image.resize((resize_dim, resize_dim), Image.LANCZOS).convert('RGB')
-    img_array = np.array(img_resized)
-    total_pixels = resize_dim * resize_dim
-    num_corrupt = int((noise_level / 100) * total_pixels)
-    
-    # Corrupt and show preview
+num_corrupt = int((noise_level / 100) * total_pixels)
+
+if noise_level < 100:
     corrupted_array = corrupt_image(img_array, num_corrupt)
     corrupted_preview = Image.fromarray(corrupted_array)
-    
-    st.image(corrupted_preview, caption=f"{noise_level}% noise", use_container_width=True)
+    caption_text = f"{noise_level}% noise"
 else:
-    st.image(image.resize((resize_dim, resize_dim)), caption="Original resized image", use_container_width=True)
+    corrupted_preview = image.resize((resize_dim, resize_dim))
+    caption_text = "Original resized image (0% noise)"
+
+st.image(corrupted_preview, caption=caption_text, use_container_width=True)
+

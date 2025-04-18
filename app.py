@@ -135,7 +135,7 @@ if noise_level < 100:
     corrupted_preview = Image.fromarray(corrupted_array)
     caption_text = f"{noise_level}% noise"
 else:
-    corrupted_preview = Image.resize((resize_dim, resize_dim))
+    corrupted_preview = image.resize((resize_dim, resize_dim))
     caption_text = "Original resized image (0% noise)"
 
 st.image(corrupted_preview, caption=caption_text, use_container_width=True)

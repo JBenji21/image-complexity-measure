@@ -17,6 +17,7 @@ def corrupt_image(img_array: np.ndarray, num_corrupt: int) -> np.ndarray:
     flat[indices] = np.random.randint(0, 256, size=(num_corrupt, 3), dtype=np.uint8)
     return flat.reshape(h, w, 3)
 
+resize_dim = st.slider("Resize image to", min_value=64, max_value=512, value=256, step=32)
 def estimate_image_complexity(img: Image.Image, steps=11, trials=5, size=(256, 256)):
     img = img.resize(size, Image.LANCZOS).convert('RGB')
     img_array = np.array(img, dtype=np.uint8)
@@ -81,7 +82,7 @@ if uploaded_file:
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
     with st.spinner("Analyzing complexity..."):
-        V, V0, VN, A, B, C3 = estimate_image_complexity(image, steps=steps, trials=trials)
+        V, V0, VN, A, B, C3 = estimate_image_complexity(image, steps=steps, trials=trials, size=(resize_dim, resize_dim))
 
     st.markdown(f"**A:** {A:.2f} bytes &nbsp;&nbsp; **B:** {B:.2f} bytes &nbsp;&nbsp; **A/B:** {A/B:.2f}")
     st.markdown(f"### C₃ Complexity Score: `{C3:.2f}` (in kilobytes²)")

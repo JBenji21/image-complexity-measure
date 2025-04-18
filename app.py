@@ -70,7 +70,27 @@ def plot_complexity(V, V0, VN, A, B):
 
 # Streamlit app
 st.title("Image Complexity Analyzer")
-st.write("Upload an image to analyze its structural complexity using compression.")
+
+st.markdown("""
+This app calculates the **structural complexity** of images using a novel compression-based method.
+
+### 📌 How it works:
+- Your image is progressively corrupted with random pixel noise, going from complete randomness (100% noise) to the original image (0% noise).
+- At each corruption step, the image is compressed, and the file size (compressed size) is recorded.
+- These measurements form a curve that reflects how quickly and non-linearly the structure of your image emerges from randomness.
+
+### 📌 Complexity Metric (C):
+The complexity score, denoted **C**, combines three factors:
+
+- **Interdependence (A/B)**: How non-linear the compression curve is (structure emerging synergistically).
+- **Final Compression (V(N))**: How small (compressed) the fully structured image is.
+- **Compression Gain (V(0) - V(N))**: How much simpler the image becomes as noise is removed.
+
+The resulting metric (**C**) is measured in KiloBytes², reflecting both the depth and complexity of your image's inherent structure.
+
+Upload your image below to explore its complexity, and use the noise-level slider to visualize how the image transforms under increasing randomness.
+""")
+
 
 uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
 

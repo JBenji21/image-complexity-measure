@@ -103,40 +103,45 @@ steps = st.slider("Number of corruption levels", 5, 21, 11)
 trials = st.slider("Trials per corruption level", 1, 10, 5)
 
 if uploaded_file:
+    # 1) Load and display original
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    with st.spinner("Analyzing complexity..."):
-        V, V0, VN, A, B, C3 = estimate_image_complexity(image, steps=steps, trials=trials, size=(resize_dim, resize_dim))
+    # 2) Immediately create a resized version and array for both complexity & noise
+    resized_image = image.resize((resize_dim, resize_dim), Image.LANCZOS).convert('RGB')
+    img_array = np.array(resized_image, dtype=np.uint8)
 
+    # 3) Compute the complexity curve
+    with st.spinner("Analyzing complexity..."):
+        V, V0, VN, A, B, C3, C3_norm = estimate_image_complexity(
+            image, steps=steps, trials=trials, size=(resize_dim, resize_dim)
+        )
+
+    # 4) Show results
     st.markdown(f"**A:** {A:.2f} bytes &nbsp;&nbsp; **B:** {B:.2f} bytes &nbsp;&nbsp; **A/B:** {A/B:.2f}")
     st.markdown(f"""
 **Complexity (C)**: `{C3:.2f}` kilobytes²  
 **Normalized Complexity (Cₙₒᵣₘ)**: `{C3_norm:.6f}` (unitless, relative)
 """)
-
-    
     st.pyplot(plot_complexity(V, V0, VN, A, B))
+
+    # 5) Noise preview (now safely in scope)
+    st.header("Visualize Noise Level")
+    noise_level = st.slider("Preview image with noise level (%)", 0, 100, 100, 5)
+
+    total_pixels = resize_dim * resize_dim
+    num_corrupt  = int((noise_level / 100) * total_pixels)
+
+    if noise_level < 100:
+        corrupted_array   = corrupt_image(img_array, num_corrupt)
+        corrupted_preview = Image.fromarray(corrupted_array)
+        caption_text      = f"{noise_level}% noise"
+    else:
+        corrupted_preview = resized_image
+        caption_text      = "Original resized image (0% noise)"
+
+    st.image(corrupted_preview, caption=caption_text, use_container_width=True)
+
 else:
     st.info("Upload an image to begin analysis.")
-
-st.header("Visualize Noise Level")
-
-# Noise preview slider (reversed)
-noise_level = st.slider(
-    "Preview image with noise level (%)",
-    min_value=0, max_value=100, value=100, step=5
-)
-total_pixels = resize_dim * resize_dim
-num_corrupt = int((noise_level / 100) * total_pixels)
-
-if noise_level < 100:
-    corrupted_array = corrupt_image(img_array, num_corrupt)
-    corrupted_preview = Image.fromarray(corrupted_array)
-    caption_text = f"{noise_level}% noise"
-else:
-    corrupted_preview = image.resize((resize_dim, resize_dim))
-    caption_text = "Original resized image (0% noise)"
-
-st.image(corrupted_preview, caption=caption_text, use_container_width=True)
 

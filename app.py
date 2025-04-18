@@ -69,7 +69,7 @@ def plot_complexity(V, V0, VN, A, B):
     return fig
 
 # Streamlit app
-st.title("Image Complexity Analyzer (C₃ Metric)")
+st.title("Image Complexity Analyzer")
 st.write("Upload an image to analyze its structural complexity using compression.")
 
 uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
@@ -85,7 +85,7 @@ if uploaded_file:
         V, V0, VN, A, B, C3 = estimate_image_complexity(image, steps=steps, trials=trials, size=(resize_dim, resize_dim))
 
     st.markdown(f"**A:** {A:.2f} bytes &nbsp;&nbsp; **B:** {B:.2f} bytes &nbsp;&nbsp; **A/B:** {A/B:.2f}")
-    st.markdown(f"### C₃ Complexity Score: `{C3:.2f}` (in kilobytes²)")
+    st.markdown(f"### Complexity Score: `{C3:.2f}` (in kilobytes²)")
     
     st.pyplot(plot_complexity(V, V0, VN, A, B))
 else:

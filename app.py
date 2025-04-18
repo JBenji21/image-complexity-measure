@@ -90,3 +90,23 @@ if uploaded_file:
     st.pyplot(plot_complexity(V, V0, VN, A, B))
 else:
     st.info("Upload an image to begin analysis.")
+
+st.header("Visualize Noise Level")
+
+# Slider for previewing noise levels
+noise_level = st.slider("Preview image with noise level (%)", min_value=0, max_value=100, value=0, step=5)
+
+if noise_level > 0:
+    # Calculate number of pixels to corrupt
+    img_resized = image.resize((resize_dim, resize_dim), Image.LANCZOS).convert('RGB')
+    img_array = np.array(img_resized)
+    total_pixels = resize_dim * resize_dim
+    num_corrupt = int((noise_level / 100) * total_pixels)
+    
+    # Corrupt and show preview
+    corrupted_array = corrupt_image(img_array, num_corrupt)
+    corrupted_preview = Image.fromarray(corrupted_array)
+    
+    st.image(corrupted_preview, caption=f"{noise_level}% noise", use_container_width=True)
+else:
+    st.image(image.resize((resize_dim, resize_dim)), caption="Original resized image", use_container_width=True)

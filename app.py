@@ -127,12 +127,12 @@ if uploaded_file:
 
     # 5) Noise preview (now safely in scope)
     st.header("Visualize Noise Level")
-    noise_level = st.slider("Preview image with noise level (%)", min_value=0, max_value=100, value=0, step=5)
+    noise_level = st.slider("Preview image with noise level (%)", min_value=0, max_value=100, value=100, step=5)
 
     total_pixels = resize_dim * resize_dim
     num_corrupt  = int((noise_level / 100) * total_pixels)
 
-    if noise_level < 100:
+    if noise_level > 0:
         corrupted_array   = corrupt_image(img_array, num_corrupt)
         corrupted_preview = Image.fromarray(corrupted_array)
         caption_text      = f"{noise_level}% noise"

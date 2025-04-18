@@ -127,7 +127,7 @@ if uploaded_file:
 
     # 5) Noise preview (now safely in scope)
     st.header("Visualize Noise Level")
-    noise_level = st.slider("Preview image with noise level (%)", 0, 100, 100, 5)
+    noise_level = st.slider("Preview image with noise level (%)", min_value=0, max_value=100, value=0, step=5)
 
     total_pixels = resize_dim * resize_dim
     num_corrupt  = int((noise_level / 100) * total_pixels)

@@ -107,7 +107,7 @@ trials = st.slider("Trials per corruption level", 1, 10, 5)
 
 if uploaded_file:
     # 1) Load and display original
-    image = Image.open(uploaded_file)
+    image = Image.open(uploaded_file).convert('RGB')
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
     # 2) Immediately create a resized version and array for both complexity & noise

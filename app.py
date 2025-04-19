@@ -127,7 +127,7 @@ if uploaded_file:
 
 **Emergence Factor (A/B)**: `{EF:.2f}`  
 **Absolute Complexity (Vₙ)**: `{AC:.1f}` bytes  
-**Structure Spread (SS)**: `{SS:.4f}`
+**Structure Spread ((V₀ - Vₙ)/V₀)**: `{SS:.4f}`
 
 ---
 

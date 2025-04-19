@@ -126,12 +126,12 @@ if uploaded_file:
 **Structured size (Vₙ)**: `{VN:.1f}` bytes  
 
 **Emergence Factor (A/B)**: `{EF:.2f}`  
-**Absolute Complexity (Vₙ)**: `{AC:.1f}` bytes 
+**Absolute Complexity (Vₙ)**: `{AC:.1f}` bytes  
 **Structure Spread (SS)**: `{SS:.4f}`
 
 ---
 
-**Emergent Structural Complexity (C):** `{C:.2f}` bytes,
+**Emergent Structural Complexity (C):** `{C:.2f}` bytes,  
 **Normalized Complexity (Cₙₒᵣₘ)**: `{C_norm:.6f}` (unitless, relative)
 """)
     st.pyplot(plot_complexity(V, V0, VN, A, B))

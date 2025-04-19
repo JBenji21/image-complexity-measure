@@ -42,10 +42,13 @@ def estimate_image_complexity(img: Image.Image, steps=11, trials=5, size=(256, 2
     V0, VN = V[0], V[-1]
     A = -N * VN + V[1:].sum()
     B = -V[1:].sum() + N * V0
-    C = VN * (V0 - VN) * A / (B * V0) if B != 0 else 0
+    EF = A / B if B != 0 else 0
+    AC = VN
+    SS = (V0 - VN) / V0 if V0 != 0 else 0
+    C = EF * AC * SS
     C_norm = C / V0 if V0 != 0 else 0
 
-    return V, V0, VN, A, B, C, C_norm
+    return V, V0, VN, A, B, EF, AC, SS, C, C_norm
 
 def plot_complexity(V, V0, VN, A, B):
     N = len(V) - 1
@@ -113,15 +116,23 @@ if uploaded_file:
 
     # 3) Compute the complexity curve
     with st.spinner("Analyzing complexity..."):
-        V, V0, VN, A, B, C, C_norm = estimate_image_complexity(
+        V, V0, VN, A, B, EF, AC, SS, C, C_norm = estimate_image_complexity(
             image, steps=steps, trials=trials, size=(resize_dim, resize_dim)
         )
 
     # 4) Show results
-    st.markdown(f"**A:** {A:.2f} bytes &nbsp;&nbsp; **B:** {B:.2f} bytes &nbsp;&nbsp; **A/B:** {A/B:.2f}")
     st.markdown(f"""
-**Complexity (C)**: `{C:.2f}` bytes  
-**Normalized Complexity (Cₙₒᵣₘ)**: `{C_norm:.6f}` (unitless, relative)
+**Baseline size (V₀)**: `{V0:.1f}` bytes  
+**Structured size (Vₙ)**: `{VN:.1f}` bytes  
+
+**Emergence Factor (A/B)**: `{EF:.2f}`  
+**Absolute Complexity (Vₙ)**: `{AC:.1f}`  
+**Structure Spread (SS)**: `{SS:.4f}`
+
+---
+
+### 🧠 **Emergent Structural Complexity (C₄)**  
+`{C4:.2f}` bytes, **Normalized Complexity (Cₙₒᵣₘ)**: `{C_norm:.6f}` (unitless, relative)
 """)
     st.pyplot(plot_complexity(V, V0, VN, A, B))
 

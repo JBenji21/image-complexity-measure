@@ -42,10 +42,10 @@ def estimate_image_complexity(img: Image.Image, steps=11, trials=5, size=(256, 2
     V0, VN = V[0], V[-1]
     A = -N * VN + V[1:].sum()
     B = -V[1:].sum() + N * V0
-    C3 = VN * (V0 - VN) * A / (B * 1000000) if B != 0 else 0 # dividing by 1,000,000 so it's in kilobytes^2
-    C3_norm = VN * (V0 - VN) * A / (B * V0**2) if V0 != 0 else 0
+    C = VN * (V0 - VN) * A / (B * V0) if B != 0 else 0
+    C_norm = C / V0 if V0 != 0 else 0
 
-    return V, V0, VN, A, B, C3, C3_norm
+    return V, V0, VN, A, B, C, C_norm
 
 def plot_complexity(V, V0, VN, A, B):
     N = len(V) - 1
@@ -85,12 +85,12 @@ The complexity score, denoted **C**, combines three factors:
 
 - **Interdependence (A/B)**: How non-linear the compression curve is (structure emerging synergistically).
 - **Final Compression (V(N))**: How small (compressed) the fully structured image is.
-- **Compression Gain (V(0) - V(N))**: How much simpler the image becomes as noise is removed.
+- **Compression Gain (V(0) - V(N))/V(0)**: How much simpler the image becomes as noise is removed.
 
-The resulting metric (**C**) is measured in KiloBytes², reflecting both the depth and complexity of your image's inherent structure.
+The resulting metric (**C**) is measured in Bytes, reflecting both the depth and complexity of your image's inherent structure.
 
 ### 📌 Normalized Complexity:
-To compare complexity scores across different images and resolutions fairly, we also provide a **normalized complexity** metric (**Cₙₒᵣₘ**) that divides C by the square of the baseline (fully random) compression size \(V(0)^2\). This normalized measure highlights how structurally complex the image is relative to its size and base entropy.
+To compare complexity scores across different images and resolutions fairly, we also provide a **normalized complexity** metric (**Cₙₒᵣₘ**) that divides C by the square of the baseline (fully random) compression size \(V(0)\). This normalized measure highlights how structurally complex the image is relative to its size and base entropy.
 
 
 Upload your image below to explore its complexity, and use the noise-level slider to visualize how the image transforms under increasing randomness.
@@ -113,15 +113,15 @@ if uploaded_file:
 
     # 3) Compute the complexity curve
     with st.spinner("Analyzing complexity..."):
-        V, V0, VN, A, B, C3, C3_norm = estimate_image_complexity(
+        V, V0, VN, A, B, C, C_norm = estimate_image_complexity(
             image, steps=steps, trials=trials, size=(resize_dim, resize_dim)
         )
 
     # 4) Show results
     st.markdown(f"**A:** {A:.2f} bytes &nbsp;&nbsp; **B:** {B:.2f} bytes &nbsp;&nbsp; **A/B:** {A/B:.2f}")
     st.markdown(f"""
-**Complexity (C)**: `{C3:.2f}` kilobytes²  
-**Normalized Complexity (Cₙₒᵣₘ)**: `{C3_norm:.6f}` (unitless, relative)
+**Complexity (C)**: `{C:.2f}` bytes  
+**Normalized Complexity (Cₙₒᵣₘ)**: `{C_norm:.6f}` (unitless, relative)
 """)
     st.pyplot(plot_complexity(V, V0, VN, A, B))
 

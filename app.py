@@ -131,7 +131,7 @@ if uploaded_file:
 
 ---
 
-### 🧠 **Emergent Structural Complexity (C)**  `{C:.2f}` bytes,
+**Emergent Structural Complexity (C):** `{C:.2f}` bytes,
 **Normalized Complexity (Cₙₒᵣₘ)**: `{C_norm:.6f}` (unitless, relative)
 """)
     st.pyplot(plot_complexity(V, V0, VN, A, B))

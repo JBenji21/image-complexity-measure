@@ -86,9 +86,9 @@ This app calculates the **structural complexity** of images using a novel compre
 ### 📌 Complexity Metric (C):
 The complexity score, denoted **C**, combines three factors:
 
-- **Interdependence (A/B)**: How non-linear the compression curve is (structure emerging synergistically).
-- **Final Compression (V(N))**: How small (compressed) the fully structured image is.
-- **Compression Gain (V(0) - V(N))/V(0)**: How much simpler the image becomes as noise is removed.
+- **Emergence Factor (A/B)**: How non-linear the compression curve is (structure emerging synergistically).
+- **Absolute Complexity (V(N))**: How small (compressed) the final, noiseless image is.
+- **Structure Spread (V(0) - V(N))/V(0)**: How much simpler the image becomes as noise is removed.
 
 The resulting metric (**C**) is measured in Bytes, reflecting both the depth and complexity of your image's inherent structure.
 
@@ -126,7 +126,7 @@ if uploaded_file:
 **Structured size (Vₙ)**: `{VN:.1f}` bytes  
 
 **Emergence Factor (A/B)**: `{EF:.2f}`  
-**Absolute Complexity (Vₙ)**: `{AC:.1f}`  
+**Absolute Complexity (Vₙ)**: `{AC:.1f}` bytes 
 **Structure Spread (SS)**: `{SS:.4f}`
 
 ---

@@ -154,7 +154,14 @@ if uploaded_file:
         corrupted_array = corrupt_image(
             np.array(image.resize((resize_dim, resize_dim)).convert('RGB'), dtype=np.uint8), num_corrupt
         )
-        corrupted_preview = Image.fromarray(corrupted_array)
+        if format_str == "JPEG":
+            buffer = io.BytesIO()
+            Image.fromarray(corrupted_array).save(buffer, format="JPEG", quality=quality, optimize=True)
+            buffer.seek(0)
+            corrupted_preview = Image.open(buffer)
+        else:
+            corrupted_preview = Image.fromarray(corrupted_array)
+
         caption_text = f"{noise_level}% noise"
     else:
         corrupted_preview = image.resize((resize_dim, resize_dim))

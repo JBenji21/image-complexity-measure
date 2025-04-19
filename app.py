@@ -139,8 +139,6 @@ if uploaded_file:
 **Absolute Complexity (Vₙ)**: `{AC:.1f}` bytes  
 **Structure Spread ((V₀ - Vₙ)/V₀)**: `{SS:.4f}`
 
----
-
 **Emergent Structural Complexity (C):** `{C:.2f}` bytes  
 **Normalized Complexity (Cₙₒᵣₘ)**: `{C_norm:.6f}` (unitless, relative)
 """)

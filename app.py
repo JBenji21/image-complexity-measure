@@ -27,22 +27,32 @@ Normalized complexity **C_norm** = C / V(0)
 """)
 
 # --- Options ---
-compression_format = st.selectbox("Compression format", ["PNG (lossless)", "JPEG (lossy)"])
-format_str = "JPEG" if "JPEG" in compression_format else "PNG"
-quality = 85
-if format_str == "JPEG":
-    quality = st.slider("JPEG quality", 30, 100, 85)
-
-corruption_type = st.radio(
-    "Corruption type",
-    ["Random noise", "Scramble pixel positions"],
-    help="Choose to replace pixels with noise or shuffle pixel positions."
-)
+# … your header and markdown …
 
 # --- Parameter Sliders ---
 resize_dim = st.slider("Resize image to", 64, 512, 256, 32)
 steps = st.slider("Number of corruption levels", 5, 21, 11)
 trials = st.slider("Trials per corruption level", 1, 10, 5)
+
+# === ADVANCED OPTIONS ===
+with st.expander("Advanced options"):
+    # Compression format (PNG vs JPEG)
+    compression_format = st.selectbox(
+        "Compression format", 
+        ["PNG (lossless)", "JPEG (lossy)"]
+    )
+    format_str = "JPEG" if "JPEG" in compression_format else "PNG"
+    quality = 85
+    if format_str == "JPEG":
+        quality = st.slider("JPEG quality", 30, 100, 85)
+
+    # Corruption type (noise vs scramble)
+    corruption_type = st.radio(
+        "Corruption type",
+        ["Random noise", "Scramble pixel positions"]
+    )
+
+# === END ADVANCED OPTIONS ===
 
 # --- Core Functions ---
 def compress_image(img: Image.Image, fmt: str = 'PNG', quality: int = 85) -> int:

@@ -11,34 +11,36 @@ st.markdown("""
 This app calculates the **structural complexity** of images using a novel compression-based method.
 
 ### 📌 How it works:
-- Your image is progressively corrupted with random pixel noise, going from complete randomness (100% noise) to the original image (0% noise).
-- At each corruption step, the image is compressed, and the file size (compressed size) is recorded.
-- These measurements form a curve that reflects how quickly and non-linearly the structure of your image emerges from randomness.
+- Your image is progressively corrupted with random pixel noise, or scrambled, going from complete randomness (100% corruption) to the original image (0% corruption).
+- At each step, the image is compressed (PNG, JPEG), and the file size recorded.
+- The resulting curve reflects how structure emerges from disorder.
 
 ### 📌 Complexity Metric (C):
-The complexity score, denoted **C**, combines three factors:
+**C** = (A/B) × V(N) × ((V(0) - V(N)) / V(0))
 
-- **Emergence Factor (A/B)**: How non-linear the compression curve is (structure emerging synergistically).
-- **Absolute Complexity (V(N))**: How small (compressed) the final, noiseless image is.
-- **Structure Spread (V(0) - V(N))/V(0)**: How much simpler the image becomes as noise is removed.
+- **V(0)**: Baseline size (fully corrupted)  
+- **V(N)**: Structured size (original)  
+- **A/B**: Emergence factor (nonlinearity)  
+- **(V(0)-V(N))/V(0)**: Structure spread
 
-The resulting metric (**C**) is measured in Bytes, reflecting both the depth and complexity of your image's inherent structure.
-
-### 📌 Normalized Complexity:
-To compare complexity scores across different images and resolutions fairly, we also provide a **normalized complexity** metric (**Cₙₒᵣₘ**) that divides C by the baseline (fully random) compression size \(V(0)\).
+Normalized complexity **C_norm** = C / V(0)
 """)
 
-# --- Compression Format Selection ---
-compression_format = st.selectbox(
-    "Compression format", ["PNG (lossless)", "JPEG (lossy)"]
-)
+# --- Options ---
+compression_format = st.selectbox("Compression format", ["PNG (lossless)", "JPEG (lossy)"])
 format_str = "JPEG" if "JPEG" in compression_format else "PNG"
 quality = 85
 if format_str == "JPEG":
     quality = st.slider("JPEG quality", 30, 100, 85)
 
+corruption_type = st.radio(
+    "Corruption type",
+    ["Random noise", "Scramble pixel positions"],
+    help="Choose to replace pixels with noise or shuffle pixel positions."
+)
+
 # --- Parameter Sliders ---
-resize_dim = st.slider("Resize image to", min_value=64, max_value=512, value=256, step=32)
+resize_dim = st.slider("Resize image to", 64, 512, 256, 32)
 steps = st.slider("Number of corruption levels", 5, 21, 11)
 trials = st.slider("Trials per corruption level", 1, 10, 5)
 
@@ -54,35 +56,49 @@ def compress_image(img: Image.Image, fmt: str = 'PNG', quality: int = 85) -> int
 
 def corrupt_image(img_array: np.ndarray, num_corrupt: int) -> np.ndarray:
     corrupted = img_array.copy()
-    h, w, _ = corrupted.shape
     flat = corrupted.reshape(-1, 3)
-    indices = np.random.choice(flat.shape[0], size=num_corrupt, replace=False)
-    flat[indices] = np.random.randint(0, 256, size=(num_corrupt, 3), dtype=np.uint8)
-    return flat.reshape(h, w, 3)
+    idx = np.random.choice(flat.shape[0], size=num_corrupt, replace=False)
+    flat[idx] = np.random.randint(0, 256, size=(num_corrupt, 3), dtype=np.uint8)
+    return flat.reshape(corrupted.shape)
 
 
-def estimate_image_complexity(img: Image.Image, steps=11, trials=5, size=(256, 256), fmt='PNG', quality=85):
+def scramble_image(img_array: np.ndarray, num_scramble: int) -> np.ndarray:
+    scrambled = img_array.copy()
+    flat = scrambled.reshape(-1, 3)
+    idx = np.random.choice(flat.shape[0], size=num_scramble, replace=False)
+    pixels = flat[idx].copy()
+    np.random.shuffle(pixels)
+    flat[idx] = pixels
+    return flat.reshape(scrambled.shape)
+
+
+def estimate_image_complexity(img: Image.Image,
+                              steps=11, trials=5,
+                              size=(256, 256),
+                              fmt='PNG', quality=85,
+                              corruption_type='Random noise'):
     img = img.resize(size, Image.LANCZOS).convert('RGB')
-    img_array = np.array(img, dtype=np.uint8)
-    n_pixels = img_array.shape[0] * img_array.shape[1]
+    arr = np.array(img, dtype=np.uint8)
+    n_pixels = arr.shape[0] * arr.shape[1]
 
     step_fracs = np.linspace(0.0, 1.0, steps)
-    compressed_sizes = []
-
+    comp_sizes = []
     for frac in step_fracs:
         keep = int(frac * n_pixels)
         corrupt = n_pixels - keep
         sizes = []
         for _ in range(trials):
-            corrupted_array = corrupt_image(img_array, corrupt)
-            corrupted_img = Image.fromarray(corrupted_array)
-            sizes.append(compress_image(corrupted_img, fmt, quality))
-        compressed_sizes.append(np.mean(sizes))
+            if corruption_type == "Scramble pixel positions":
+                mod = scramble_image(arr, corrupt)
+            else:
+                mod = corrupt_image(arr, corrupt)
+            img_mod = Image.fromarray(mod)
+            sizes.append(compress_image(img_mod, fmt, quality))
+        comp_sizes.append(np.mean(sizes))
 
-    V = np.array(compressed_sizes, dtype=float)
+    V = np.array(comp_sizes, dtype=float)
     N = len(V) - 1
     V0, VN = V[0], V[-1]
-
     A = -N * VN + V[1:].sum()
     B = -V[1:].sum() + N * V0
     EF = A / B if B != 0 else 0
@@ -90,83 +106,63 @@ def estimate_image_complexity(img: Image.Image, steps=11, trials=5, size=(256, 2
     SS = (V0 - VN) / V0 if V0 != 0 else 0
     C = EF * AC * SS
     C_norm = C / V0 if V0 != 0 else 0
-
     return V, V0, VN, A, B, EF, AC, SS, C, C_norm
 
 
 def plot_complexity(V, V0, VN, A, B):
-    N = len(V) - 1
-    x = np.arange(N + 1)
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(x, V, 'o-', label='V(i)', lw=2)
-    ax.hlines(V0, 0, N, colors='gray', linestyles='--', label='V(0)')
-    ax.hlines(VN, 0, N, colors='black', linestyles='--', label='V(N)')
-    ax.fill_between(x, V, V0, where=V <= V0, color='orange', alpha=0.3, label=f'B = {B:.1f}')
-    ax.fill_between(x, V, VN, where=V >= VN, color='skyblue', alpha=0.3, label=f'A = {A:.1f}')
-    ax.plot(0, V0, 'ro'); ax.text(0, V0, ' V(0)', va='bottom', ha='left')
-    ax.plot(N, VN, 'ro'); ax.text(N, VN, ' V(N)', va='bottom', ha='right')
-    ax.set_title("Image V(i) with A & B areas")
-    ax.set_xlabel("Step i → increasing order (less noise)")
-    ax.set_ylabel("V(i) = compressed size (bytes)")
+    x = np.arange(len(V))
+    fig, ax = plt.subplots(figsize=(8,5))
+    ax.plot(x, V, 'o-', lw=2, label='V(i)')
+    ax.hlines(V0, 0, x[-1], colors='gray', ls='--', label='V(0)')
+    ax.hlines(VN, 0, x[-1], colors='black', ls='--', label='V(N)')
+    ax.fill_between(x, V, V0, where=V<=V0, color='orange', alpha=0.3, label=f'B')
+    ax.fill_between(x, V, VN, where=V>=VN, color='skyblue', alpha=0.3, label=f'A')
+    ax.set_xlabel('Step i (less noise)')
+    ax.set_ylabel('Compressed size (bytes)')
     ax.legend(loc='lower left')
     ax.grid(True)
     fig.tight_layout()
     return fig
 
 # --- File Uploader & Execution ---
-uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"])
-
-if uploaded_file:
-    image = Image.open(uploaded_file).convert('RGB')
-    st.image(image, caption="Uploaded Image", use_container_width=True)
-
-    with st.spinner("Analyzing complexity..."):
+up = st.file_uploader("Choose an image file", type=["png","jpg","jpeg"])
+if up:
+    img = Image.open(up).convert('RGB')
+    st.image(img, caption="Uploaded Image", use_container_width=True)
+    with st.spinner("Analyzing..."):
         V, V0, VN, A, B, EF, AC, SS, C, C_norm = estimate_image_complexity(
-            image,
-            steps=steps,
-            trials=trials,
+            img, steps, trials,
             size=(resize_dim, resize_dim),
-            fmt=format_str,
-            quality=quality
+            fmt=format_str, quality=quality,
+            corruption_type=corruption_type
         )
-
     st.markdown(f"""
-**Baseline size (V₀)**: `{V0:.1f}` bytes  
-**Structured size (Vₙ)**: `{VN:.1f}` bytes  
-
-**Emergence Factor (A/B)**: `{EF:.2f}`  
-**Absolute Complexity (Vₙ)**: `{AC:.1f}` bytes  
-**Structure Spread ((V₀ - Vₙ)/V₀)**: `{SS:.4f}`
-
+**Baseline size (V₀):** `{V0:.1f}` bytes  
+**Structured size (Vₙ):** `{VN:.1f}` bytes  
+**Emergence Factor (A/B):** `{EF:.2f}`  
+**Absolute Complexity (Vₙ):** `{AC:.1f}` bytes  
+**Structure Spread:** `{SS:.4f}`  
+---
 **Emergent Structural Complexity (C):** `{C:.2f}` bytes  
-**Normalized Complexity (Cₙₒᵣₘ)**: `{C_norm:.6f}` (unitless, relative)
-""")
-
+**Normalized Complexity (Cₙₒᵣₘ):** `{C_norm:.6f}`""")
     st.pyplot(plot_complexity(V, V0, VN, A, B))
-
-    st.header("Visualize Noise Level")
-    noise_level = st.slider("Preview image with noise level (%)", min_value=0, max_value=100, value=100, step=5)
-    total_pixels = resize_dim * resize_dim
-    num_corrupt = int((noise_level / 100) * total_pixels)
-
-    if noise_level > 0:
-        corrupted_array = corrupt_image(
-            np.array(image.resize((resize_dim, resize_dim)).convert('RGB'), dtype=np.uint8), num_corrupt
-        )
-        if format_str == "JPEG":
-            buffer = io.BytesIO()
-            Image.fromarray(corrupted_array).save(buffer, format="JPEG", quality=quality, optimize=True)
-            buffer.seek(0)
-            corrupted_preview = Image.open(buffer)
+    st.header("Visualize Corruption Level")
+    lvl = st.slider("Corruption level (%)", 0, 100, 100, 5)
+    corrupt = int((lvl/100) * resize_dim * resize_dim)
+    if lvl>0:
+        if corruption_type == "Scramble pixel positions":
+            arr_mod = scramble_image(np.array(img.resize((resize_dim,resize_dim)).convert('RGB')), corrupt)
         else:
-            corrupted_preview = Image.fromarray(corrupted_array)
-
-        caption_text = f"{noise_level}% noise"
+            arr_mod = corrupt_image(np.array(img.resize((resize_dim,resize_dim)).convert('RGB')), corrupt)
+        if format_str=="JPEG":
+            buf = io.BytesIO()
+            Image.fromarray(arr_mod).save(buf, format='JPEG', quality=quality, optimize=True)
+            buf.seek(0)
+            prev = Image.open(buf)
+        else:
+            prev = Image.fromarray(arr_mod)
+        st.image(prev, caption=f"{lvl}% corrupted", use_container_width=True)
     else:
-        corrupted_preview = image.resize((resize_dim, resize_dim))
-        caption_text = "Original resized image (0% noise)"
-
-    st.image(corrupted_preview, caption=caption_text, use_container_width=True)
+        st.image(img.resize((resize_dim, resize_dim)), caption="Original (0% corruption)", use_container_width=True)
 else:
     st.info("Upload an image to begin analysis.")

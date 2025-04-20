@@ -39,7 +39,7 @@ with st.expander("Advanced options"):
     # Compression format (PNG vs JPEG)
     compression_format = st.selectbox(
         "Compression format", 
-        ["PNG (lossless)", "JPEG (lossy)"]
+        ["PNG (default - lossless)", "JPEG (experimental - lossy)"]
     )
     format_str = "JPEG" if "JPEG" in compression_format else "PNG"
     quality = 85
@@ -49,7 +49,7 @@ with st.expander("Advanced options"):
     # Corruption type (noise vs scramble)
     corruption_type = st.radio(
         "Corruption type",
-        ["Random noise", "Scramble pixel positions"]
+        ["Random noise", "Scramble pixel positions - experimental"]
     )
 
 # === END ADVANCED OPTIONS ===

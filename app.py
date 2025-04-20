@@ -137,14 +137,15 @@ if up:
             corruption_type=corruption_type
         )
     st.markdown(f"""
+**Emergent Structural Complexity (C):** `{C:.2f}` bytes  
+**Normalized Complexity (Cₙₒᵣₘ):** `{C_norm:.6f}`
+---
 **Baseline size (V₀):** `{V0:.1f}` bytes  
 **Structured size (Vₙ):** `{VN:.1f}` bytes  
 **Emergence Factor (A/B):** `{EF:.2f}`  
 **Absolute Complexity (Vₙ):** `{AC:.1f}` bytes  
 **Structure Spread:** `{SS:.4f}`  
----
-**Emergent Structural Complexity (C):** `{C:.2f}` bytes  
-**Normalized Complexity (Cₙₒᵣₘ):** `{C_norm:.6f}`""")
+""")
     st.pyplot(plot_complexity(V, V0, VN, A, B))
     st.header("Visualize Corruption Level")
     lvl = st.slider("Corruption level (%)", 0, 100, 100, 5)
